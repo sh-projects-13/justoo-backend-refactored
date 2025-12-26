@@ -1,0 +1,637 @@
+{
+  "info": {
+    "name": "Justoo Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Backend API collection for admin/customer/rider testing. Set collection variables (baseUrl, tokens, credentials) before running."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "adminEmail", "value": "admin@example.com" },
+    { "key": "adminPassword", "value": "ChangeMe123" },
+    { "key": "customerPhone", "value": "9999999999" },
+    { "key": "customerOtp", "value": "123456" },
+    { "key": "customerToken", "value": "" },
+    { "key": "riderUsername", "value": "rider1" },
+    { "key": "riderPassword", "value": "ChangeMe123" },
+    { "key": "riderToken", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "productId", "value": "" },
+    { "key": "customerId", "value": "" },
+    { "key": "riderId", "value": "" },
+    { "key": "addressId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Auth - Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Admin auth is cookie-session based. Postman usually stores cookies automatically.",
+                  "// If you want to force it via header, uncomment below to capture Set-Cookie:",
+                  "// const sc = pm.response.headers.get('Set-Cookie');",
+                  "// if (sc) pm.collectionVariables.set('adminCookie', sc.split(';')[0]);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth - Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/admin/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Whitelist - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/whitelist",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "whitelist"]
+            }
+          }
+        },
+        {
+          "name": "Whitelist - Add Phone",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/whitelist",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "whitelist"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{customerPhone}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Whitelist - Remove Phone",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/admin/whitelist/{{customerPhone}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "whitelist", "{{customerPhone}}"]
+            }
+          }
+        },
+        {
+          "name": "Products - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "products"]
+            }
+          }
+        },
+        {
+          "name": "Products - Create (multipart form-data)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/admin/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "products"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name", "value": "Test Product", "type": "text" },
+                {
+                  "key": "description",
+                  "value": "Test product description",
+                  "type": "text"
+                },
+                { "key": "isActive", "value": "true", "type": "text" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.product?.id) pm.collectionVariables.set('productId', json.product.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Products - Get by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "products", "{{productId}}"]
+            }
+          }
+        },
+        {
+          "name": "Products - Update (multipart form-data)",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/admin/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "products", "{{productId}}"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Test Product Updated",
+                  "type": "text"
+                },
+                { "key": "isActive", "value": "true", "type": "text" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Products - Delete",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/admin/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "products", "{{productId}}"]
+            }
+          }
+        },
+        {
+          "name": "Inventory - Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "inventory"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"costPrice\": \"10.00\",\n  \"sellingPrice\": \"15.00\",\n  \"discountPercent\": \"0\",\n  \"quantity\": 50,\n  \"minQuantity\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Inventory - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "inventory"]
+            }
+          }
+        },
+        {
+          "name": "Inventory - Low Stock Alerts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/inventory/alerts/low-stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "inventory", "alerts", "low-stock"]
+            }
+          }
+        },
+        {
+          "name": "Inventory - Out of Stock Alerts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/inventory/alerts/out-of-stock",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "inventory", "alerts", "out-of-stock"]
+            }
+          }
+        },
+        {
+          "name": "Riders (Admin) - Create",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/riders",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "riders"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Rider\",\n  \"phone\": \"8888888888\",\n  \"username\": \"{{riderUsername}}\",\n  \"password\": \"{{riderPassword}}\",\n  \"isActive\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.rider?.id) pm.collectionVariables.set('riderId', json.rider.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Riders (Admin) - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/riders",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "riders"]
+            }
+          }
+        },
+        {
+          "name": "Customers (Admin) - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "customers"]
+            }
+          }
+        },
+        {
+          "name": "Orders (Admin) - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Orders (Admin) - Get by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "orders", "{{orderId}}"]
+            }
+          }
+        },
+        {
+          "name": "Orders (Admin) - Events",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders/{{orderId}}/events",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "orders", "{{orderId}}", "events"]
+            }
+          }
+        },
+        {
+          "name": "Orders (Admin) - Cancel",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders/{{orderId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "orders", "{{orderId}}", "cancel"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Testing cancel\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "item": [
+        {
+          "name": "Auth - Send OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/customer/auth/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "auth", "send-otp"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{customerPhone}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Auth - Verify OTP (stores customerToken)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/customer/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "auth", "verify-otp"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{customerPhone}}\",\n  \"otp\": \"{{customerOtp}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.token) pm.collectionVariables.set('customerToken', json.token);",
+                  "if (json?.customer?.id) pm.collectionVariables.set('customerId', json.customer.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Auth - Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customer/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "auth", "logout"]
+            }
+          }
+        },
+        {
+          "name": "Profile - Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customer/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "me"]
+            }
+          }
+        },
+        {
+          "name": "Profile - Update Me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customer/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "me"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Customer Updated\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Profile - Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customer/me/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "me", "status"]
+            }
+          }
+        },
+        {
+          "name": "Addresses - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customer/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "addresses"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"hostel\",\n  \"line1\": \"Hostel Block A\",\n  \"line2\": \"Room 101\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.address?.id) pm.collectionVariables.set('addressId', json.address.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Addresses - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customer/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "addresses"]
+            }
+          }
+        },
+        {
+          "name": "Orders - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customer/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "orders"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryFee\": \"0\",\n  \"addressId\": \"{{addressId}}\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 1\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.order?.id) pm.collectionVariables.set('orderId', json.order.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders - List Mine",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customerToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/customer/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "orders"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rider",
+      "item": [
+        {
+          "name": "Auth - Login (stores riderToken)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/rider/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["rider", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{riderUsername}}\",\n  \"password\": \"{{riderPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json?.token) pm.collectionVariables.set('riderToken', json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Orders - Available",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{riderToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rider/orders/available",
+              "host": ["{{baseUrl}}"],
+              "path": ["rider", "orders", "available"]
+            }
+          }
+        },
+        {
+          "name": "Orders - Accept",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{riderToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rider/orders/{{orderId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["rider", "orders", "{{orderId}}", "accept"]
+            }
+          }
+        },
+        {
+          "name": "Orders - Out for delivery",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{riderToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rider/orders/{{orderId}}/out-for-delivery",
+              "host": ["{{baseUrl}}"],
+              "path": ["rider", "orders", "{{orderId}}", "out-for-delivery"]
+            }
+          }
+        },
+        {
+          "name": "Orders - Delivered",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{riderToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rider/orders/{{orderId}}/delivered",
+              "host": ["{{baseUrl}}"],
+              "path": ["rider", "orders", "{{orderId}}", "delivered"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

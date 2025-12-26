@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: justoo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: justoo
+      POSTGRES_USER: justoo
+      POSTGRES_PASSWORD: justoo
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U justoo -d justoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

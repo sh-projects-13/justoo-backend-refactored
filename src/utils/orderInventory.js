@@ -1,0 +1,75 @@
+import { eq, sql, and, gte } from "drizzle-orm";
+import { inventory } from "../db/schema.js";
+
+function normalizeItems(items) {
+  const map = new Map();
+
+  for (const item of Array.isArray(items) ? items : []) {
+    const productId = String(item?.productId || "").trim();
+    const qty = Number.parseInt(String(item?.quantity ?? ""), 10);
+
+    if (!productId) continue;
+    if (!Number.isFinite(qty) || qty <= 0) continue;
+
+    map.set(productId, (map.get(productId) || 0) + qty);
+  }
+
+  return [...map.entries()].map(([productId, quantity]) => ({
+    productId,
+    quantity,
+  }));
+}
+
+/**
+ * Reserve inventory for an order (DECREMENT).
+ * Fails if stock is insufficient.
+ */
+export async function reserveInventory(tx, items) {
+  const normalized = normalizeItems(items);
+  if (!normalized.length) return;
+
+  const now = new Date();
+
+  for (const { productId, quantity } of normalized) {
+    const result = await tx
+      .update(inventory)
+      .set({
+        quantity: sql`${inventory.quantity} - ${quantity}`,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          eq(inventory.productId, productId),
+          gte(inventory.quantity, quantity)
+        )
+      );
+
+    if (result.rowsAffected !== 1) {
+      throw new Error(`INSUFFICIENT_STOCK:${productId}`);
+    }
+  }
+}
+
+/**
+ * Restore inventory on cancellation (INCREMENT).
+ */
+export async function restoreInventory(tx, items) {
+  const normalized = normalizeItems(items);
+  if (!normalized.length) return;
+
+  const now = new Date();
+
+  for (const { productId, quantity } of normalized) {
+    const result = await tx
+      .update(inventory)
+      .set({
+        quantity: sql`${inventory.quantity} + ${quantity}`,
+        updatedAt: now,
+      })
+      .where(eq(inventory.productId, productId));
+
+    if (result.rowsAffected !== 1) {
+      throw new Error(`INVENTORY_ROW_MISSING:${productId}`);
+    }
+  }
+}
