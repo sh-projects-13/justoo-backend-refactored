@@ -62,7 +62,12 @@ If you don’t set these in dev, the server uses dev defaults.
    - `pnpm install`
 
 2. Create/update tables from the Drizzle schema:
-   - `pnpm drizzle-kit push`
+   - `pnpm db:push`
+
+If you are using migrations (recommended for team workflows):
+
+- Generate migration SQL: `pnpm db:generate`
+- Apply migrations: `pnpm db:migrate`
 
 Notes:
 
@@ -101,6 +106,7 @@ Core tables:
 - `customers`, `customer_sessions`
 - `riders`, `rider_sessions`
 - `products`, `inventory`
+- `inventory_movements` (audit log of stock changes)
 - `orders`, `order_items`, `order_addresses`
 - `rider_assignments` (1 row per order when assigned)
 - `order_events` (audit trail for transitions)
@@ -120,16 +126,27 @@ Session tables:
    - `POST /admin/auth/login`
 2. Create products (multipart/form-data because of optional image upload)
    - `POST /admin/products`
+   - Image file field name must be `image` (type: File). Using `img` will cause Multer “Unexpected field”.
 3. Create inventory for each product
    - `POST /admin/inventory`
-4. Whitelist customer phone
+4. Add stock to an existing product
+   - `POST /admin/inventory/:productId/add-quantity`
+   - Body example:
+     - `{ "quantity": 10, "reason": "ADJUSTMENT", "referenceType": "ADJUSTMENT", "referenceId": null }`
+5. View inventory movement history (audit log)
+   - `GET /admin/inventory/:productId/movements`
+6. Whitelist customer phone
    - `POST /admin/whitelist`
-5. Create rider (with username/password)
+7. Create rider (with username/password)
    - `POST /admin/riders`
-6. View orders / cancel orders / view audit events
+8. View orders / cancel orders / view audit events
    - `GET /admin/orders`
    - `GET /admin/orders/:orderId/events`
    - `POST /admin/orders/:orderId/cancel`
+
+Notes:
+
+- Cancelling an order restores inventory and also records an `inventory_movements` row (reason `ORDER_CANCELLED`, referenceType `ORDER`).
 
 Roles:
 
@@ -235,7 +252,7 @@ Notes:
 
 ## 11) Troubleshooting
 
-- **500 errors / missing tables**: run `pnpm drizzle-kit push` again.
+- **500 errors / missing tables**: run `pnpm db:push` (or `pnpm db:migrate` if you’re using migrations) again.
 - **Admin requests unauthorized**: make sure you logged in and are sending the session cookie.
 - **Customer OTP not whitelisted**: ensure `phone_whitelist` contains the phone.
 - **Customer OTP verify says CUSTOMER_NOT_FOUND**: insert a customer row first (no signup route exists right now).

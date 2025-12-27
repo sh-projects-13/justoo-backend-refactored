@@ -24,6 +24,23 @@ export const paymentStatusEnum = pgEnum("payment_status", [
   "REFUNDED",
 ]);
 
+export const inventoryMovementReasonEnum = pgEnum("inventory_movement_reason", [
+  "INITIAL_STOCK",
+  "PURCHASE",
+  "ADJUSTMENT",
+  "ORDER_CANCELLED",
+]);
+
+export const inventoryMovementReferenceTypeEnum = pgEnum(
+  "inventory_movement_reference_type",
+  ["ORDER", "PURCHASE", "ADJUSTMENT"]
+);
+
+export const inventoryMovementActorTypeEnum = pgEnum(
+  "inventory_movement_actor_type",
+  ["ADMIN", "SYSTEM"]
+);
+
 import {
   pgTable,
   uuid,
@@ -105,6 +122,27 @@ export const inventory = pgTable("inventory", {
   minQuantity: integer("min_quantity").default(0).notNull(),
 
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+
+export const inventoryMovements = pgTable("inventory_movements", {
+  id: uuid("id").defaultRandom().primaryKey(),
+
+  productId: uuid("product_id")
+    .references(() => products.id, { onDelete: "cascade" })
+    .notNull(),
+
+  deltaQuantity: integer("delta_quantity").notNull(),
+
+  reason: inventoryMovementReasonEnum("reason").notNull(),
+
+  referenceType: inventoryMovementReferenceTypeEnum("reference_type"),
+  referenceId: uuid("reference_id"),
+
+  actorType: inventoryMovementActorTypeEnum("actor_type").notNull(),
+  actorId: uuid("actor_id"),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 

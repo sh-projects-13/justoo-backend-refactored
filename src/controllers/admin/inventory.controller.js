@@ -1,7 +1,7 @@
-import { eq, lt } from "drizzle-orm";
+import { desc, eq, lt, sql } from "drizzle-orm";
 
 import { db } from "../../db/index.js";
-import { inventory, products } from "../../db/schema.js";
+import { inventory, inventoryMovements, products } from "../../db/schema.js";
 import {
     isPgUniqueViolation,
     toIntOrUndefined,
@@ -60,13 +60,28 @@ export async function createInventoryItem(req, res, next) {
             return res.status(404).json({ error: "PRODUCT_NOT_FOUND" });
         }
 
-        await db.insert(inventory).values({
-            productId,
-            costPrice,
-            sellingPrice,
-            discountPercent,
-            quantity,
-            minQuantity,
+        const adminId = req.admin?.id || req.session?.adminId;
+        if (!adminId) return res.status(401).json({ error: "ADMIN_UNAUTHENTICATED" });
+
+        await db.transaction(async (tx) => {
+            await tx.insert(inventory).values({
+                productId,
+                costPrice,
+                sellingPrice,
+                discountPercent,
+                quantity,
+                minQuantity,
+            });
+
+            await tx.insert(inventoryMovements).values({
+                productId,
+                deltaQuantity: quantity,
+                reason: "INITIAL_STOCK",
+                referenceType: "PURCHASE",
+                referenceId: null,
+                actorType: "ADMIN",
+                actorId: adminId,
+            });
         });
 
         const row = await fetchInventoryRow(productId);
@@ -216,6 +231,106 @@ export async function updateInventoryItem(req, res, next) {
 
         const row = await fetchInventoryRow(productId);
         return res.json({ inventory: row });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function addInventoryQuantity(req, res, next) {
+    try {
+        const productId = toStringOrUndefined(req.params?.productId);
+        if (!productId) return res.status(400).json({ error: "PRODUCT_ID_REQUIRED" });
+
+        const quantityToAdd = toIntOrUndefined(req.body?.quantity);
+        if (quantityToAdd === undefined) {
+            return res.status(400).json({ error: "QUANTITY_REQUIRED" });
+        }
+        if (quantityToAdd <= 0) {
+            return res.status(400).json({ error: "QUANTITY_MUST_BE_POSITIVE" });
+        }
+
+        const adminId = req.admin?.id || req.session?.adminId;
+        if (!adminId) return res.status(401).json({ error: "ADMIN_UNAUTHENTICATED" });
+
+        const reason = toStringOrUndefined(req.body?.reason) ?? "ADJUSTMENT";
+        const referenceType = toStringOrUndefined(req.body?.referenceType) ?? "ADJUSTMENT";
+        const referenceId = toStringOrUndefined(req.body?.referenceId) ?? null;
+
+        const allowedReasons = new Set([
+            "INITIAL_STOCK",
+            "PURCHASE",
+            "ADJUSTMENT",
+            "ORDER_CANCELLED",
+        ]);
+        const allowedReferenceTypes = new Set(["ORDER", "PURCHASE", "ADJUSTMENT"]);
+
+        if (!allowedReasons.has(reason)) {
+            return res.status(400).json({ error: "INVALID_REASON" });
+        }
+        if (!allowedReferenceTypes.has(referenceType)) {
+            return res.status(400).json({ error: "INVALID_REFERENCE_TYPE" });
+        }
+
+        const now = new Date();
+
+        const outcome = await db.transaction(async (tx) => {
+            const result = await tx
+                .update(inventory)
+                .set({
+                    quantity: sql`${inventory.quantity} + ${quantityToAdd}`,
+                    updatedAt: now,
+                })
+                .where(eq(inventory.productId, productId));
+
+            if (result.rowsAffected !== 1) return { type: "not_found" };
+
+            await tx.insert(inventoryMovements).values({
+                productId,
+                deltaQuantity: quantityToAdd,
+                reason,
+                referenceType,
+                referenceId,
+                actorType: "ADMIN",
+                actorId: adminId,
+            });
+
+            return { type: "ok" };
+        });
+
+        if (outcome.type === "not_found") {
+            return res.status(404).json({ error: "INVENTORY_NOT_FOUND" });
+        }
+
+        const row = await fetchInventoryRow(productId);
+        return res.json({ inventory: row });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function listInventoryMovementsForProduct(req, res, next) {
+    try {
+        const productId = toStringOrUndefined(req.params?.productId);
+        if (!productId) return res.status(400).json({ error: "PRODUCT_ID_REQUIRED" });
+
+        const rows = await db
+            .select({
+                id: inventoryMovements.id,
+                productId: inventoryMovements.productId,
+                deltaQuantity: inventoryMovements.deltaQuantity,
+                reason: inventoryMovements.reason,
+                referenceType: inventoryMovements.referenceType,
+                referenceId: inventoryMovements.referenceId,
+                actorType: inventoryMovements.actorType,
+                actorId: inventoryMovements.actorId,
+                createdAt: inventoryMovements.createdAt,
+            })
+            .from(inventoryMovements)
+            .where(eq(inventoryMovements.productId, productId))
+            .orderBy(desc(inventoryMovements.createdAt))
+            .limit(100);
+
+        return res.json({ movements: rows });
     } catch (err) {
         next(err);
     }

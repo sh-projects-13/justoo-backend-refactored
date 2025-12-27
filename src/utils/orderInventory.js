@@ -1,5 +1,5 @@
 import { eq, sql, and, gte } from "drizzle-orm";
-import { inventory } from "../db/schema.js";
+import { inventory, inventoryMovements } from "../db/schema.js";
 
 function normalizeItems(items) {
   const map = new Map();
@@ -53,7 +53,7 @@ export async function reserveInventory(tx, items) {
 /**
  * Restore inventory on cancellation (INCREMENT).
  */
-export async function restoreInventory(tx, items) {
+export async function restoreInventory(tx, items, movement) {
   const normalized = normalizeItems(items);
   if (!normalized.length) return;
 
@@ -70,6 +70,18 @@ export async function restoreInventory(tx, items) {
 
     if (result.rowsAffected !== 1) {
       throw new Error(`INVENTORY_ROW_MISSING:${productId}`);
+    }
+
+    if (movement) {
+      await tx.insert(inventoryMovements).values({
+        productId,
+        deltaQuantity: quantity,
+        reason: movement.reason,
+        referenceType: movement.referenceType,
+        referenceId: movement.referenceId ?? null,
+        actorType: movement.actorType,
+        actorId: movement.actorId ?? null,
+      });
     }
   }
 }

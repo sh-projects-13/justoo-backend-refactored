@@ -196,7 +196,13 @@ export async function cancelOrder(req, res, next) {
                 .from(orderItems)
                 .where(eq(orderItems.orderId, orderId));
 
-            await restoreInventory(tx, itemRows);
+            await restoreInventory(tx, itemRows, {
+                reason: "ORDER_CANCELLED",
+                referenceType: "ORDER",
+                referenceId: orderId,
+                actorType: "ADMIN",
+                actorId: adminId,
+            });
 
             await tx.insert(orderEvents).values({
                 orderId,

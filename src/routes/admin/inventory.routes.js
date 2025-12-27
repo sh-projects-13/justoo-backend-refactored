@@ -1,9 +1,11 @@
 import { Router } from "express";
 
 import {
+    addInventoryQuantity,
     createInventoryItem,
     deleteInventoryItem,
     getInventoryItem,
+    listInventoryMovementsForProduct,
     listInventory,
     listLowStockInventory,
     listOutOfStockInventory,
@@ -44,8 +46,20 @@ router.get(
     canReadInventory,
     getInventoryItem
 );
+router.get(
+    "/:productId/movements",
+    requireAdminAuth,
+    canReadInventory,
+    listInventoryMovementsForProduct
+);
 
 router.post("/", requireAdminAuth, canWriteInventory, createInventoryItem);
+router.post(
+    "/:productId/add-quantity",
+    requireAdminAuth,
+    canWriteInventory,
+    addInventoryQuantity
+);
 router.patch(
     "/:productId",
     requireAdminAuth,

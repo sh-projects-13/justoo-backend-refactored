@@ -132,7 +132,12 @@
                   "value": "Test product description",
                   "type": "text"
                 },
-                { "key": "isActive", "value": "true", "type": "text" }
+                { "key": "isActive", "value": "true", "type": "text" },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
               ]
             }
           },
@@ -177,7 +182,12 @@
                   "value": "Test Product Updated",
                   "type": "text"
                 },
-                { "key": "isActive", "value": "true", "type": "text" }
+                { "key": "isActive", "value": "true", "type": "text" },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
               ]
             }
           }
@@ -206,6 +216,33 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"costPrice\": \"10.00\",\n  \"sellingPrice\": \"15.00\",\n  \"discountPercent\": \"0\",\n  \"quantity\": 50,\n  \"minQuantity\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Inventory - Add Quantity",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{baseUrl}}/admin/inventory/{{productId}}/add-quantity",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "inventory", "{{productId}}", "add-quantity"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 10,\n  \"reason\": \"ADJUSTMENT\",\n  \"referenceType\": \"ADJUSTMENT\",\n  \"referenceId\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Inventory - Movements (by Product)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/inventory/{{productId}}/movements",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "inventory", "{{productId}}", "movements"]
             }
           }
         },
