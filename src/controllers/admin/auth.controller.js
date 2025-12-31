@@ -78,3 +78,44 @@ export async function logoutAdmin(req, res, next) {
         next(err);
     }
 }
+
+export async function getAdminMe(req, res, next) {
+    try {
+        if (!req.session?.adminId) {
+            return res.status(401).json({ error: "ADMIN_UNAUTHENTICATED" });
+        }
+
+        const adminId = req.admin?.id || req.session.adminId;
+
+        const adminRows = await db
+            .select({
+                id: admins.id,
+                name: admins.name,
+                email: admins.email,
+                createdAt: admins.createdAt,
+            })
+            .from(admins)
+            .where(eq(admins.id, adminId))
+            .limit(1);
+
+        const admin = adminRows[0];
+        if (!admin) {
+            req.session.adminId = undefined;
+            return res.status(401).json({ error: "ADMIN_UNAUTHENTICATED" });
+        }
+
+        const roleRows = await db
+            .select({ role: adminRoles.role })
+            .from(adminRoles)
+            .where(eq(adminRoles.adminId, admin.id));
+
+        return res.json({
+            admin: {
+                ...admin,
+                roles: roleRows.map((r) => r.role),
+            },
+        });
+    } catch (err) {
+        next(err);
+    }
+}

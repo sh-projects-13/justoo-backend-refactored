@@ -55,6 +55,17 @@
           ]
         },
         {
+          "name": "Auth - Me",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/admin/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "auth", "me"]
+            }
+          }
+        },
+        {
           "name": "Auth - Logout",
           "request": {
             "method": "POST",
