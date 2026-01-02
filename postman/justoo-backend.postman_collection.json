@@ -532,6 +532,28 @@
           }
         },
         {
+          "name": "Items - List",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/customer/items?inStock=true&sort=newest",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "items"]
+            }
+          }
+        },
+        {
+          "name": "Items - Search",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/customer/items/search?q=test&inStock=true&sort=newest",
+              "host": ["{{baseUrl}}"],
+              "path": ["customer", "items", "search"]
+            }
+          }
+        },
+        {
           "name": "Profile - Me",
           "request": {
             "method": "GET",
@@ -702,6 +724,20 @@
           ]
         },
         {
+          "name": "Auth - Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{riderToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rider/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["rider", "auth", "me"]
+            }
+          }
+        },
+        {
           "name": "Orders - Available",
           "request": {
             "method": "GET",
@@ -712,6 +748,20 @@
               "raw": "{{baseUrl}}/rider/orders/available",
               "host": ["{{baseUrl}}"],
               "path": ["rider", "orders", "available"]
+            }
+          }
+        },
+        {
+          "name": "Orders - My Active",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{riderToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rider/orders/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["rider", "orders", "active"]
             }
           }
         },

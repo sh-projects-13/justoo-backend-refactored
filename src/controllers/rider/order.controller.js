@@ -1,5 +1,5 @@
 
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import { db } from "../../db/index.js";
 import {
@@ -34,6 +34,42 @@ export async function listAvailableOrders(req, res, next) {
             .leftJoin(riderAssignments, eq(riderAssignments.orderId, orders.id))
             .leftJoin(orderAddresses, eq(orderAddresses.orderId, orders.id))
             .where(and(eq(orders.status, "CONFIRMED"), isNull(riderAssignments.orderId)))
+            .orderBy(desc(orders.createdAt));
+
+        return res.json({ orders: rows });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function listMyActiveOrders(req, res, next) {
+    try {
+        const auth = await ensureRider(req);
+        if (auth.error) return replyRiderAuthError(res, auth.error);
+
+        const riderId = auth.rider.id;
+
+        const rows = await db
+            .select({
+                id: orders.id,
+                status: orders.status,
+                deliveryFee: orders.deliveryFee,
+                subtotalAmount: orders.subtotalAmount,
+                totalAmount: orders.totalAmount,
+                createdAt: orders.createdAt,
+                addressLabel: orderAddresses.label,
+                addressLine1: orderAddresses.line1,
+                addressLine2: orderAddresses.line2,
+            })
+            .from(orders)
+            .innerJoin(riderAssignments, eq(riderAssignments.orderId, orders.id))
+            .leftJoin(orderAddresses, eq(orderAddresses.orderId, orders.id))
+            .where(
+                and(
+                    eq(riderAssignments.riderId, riderId),
+                    inArray(orders.status, ["ASSIGNED_RIDER", "OUT_FOR_DELIVERY"])
+                )
+            )
             .orderBy(desc(orders.createdAt));
 
         return res.json({ orders: rows });

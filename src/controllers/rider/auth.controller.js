@@ -105,3 +105,11 @@ export async function login(req, res, next) {
     }
 }
 
+export async function getMe(req, res, next) {
+    try {
+        return res.json({ rider: req.rider });
+    } catch (err) {
+        next(err);
+    }
+}
+
