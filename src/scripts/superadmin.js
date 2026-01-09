@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "../db/index.js";
 import { admins, adminRoles } from "../db/schema.js";
+import { env } from "../config/env.js";
 
 function readArg(flag) {
     const prefix = `--${flag}=`;
