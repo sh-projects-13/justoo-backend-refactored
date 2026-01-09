@@ -11,6 +11,12 @@ import { env, isProd } from "./config/env.js";
 
 const app = express();
 
+// Required when running behind a TLS-terminating proxy (Render/Fly/NGINX/etc),
+// otherwise secure cookies won't be set because req.secure stays false.
+
+app.set("trust proxy", 1);
+
+
 app.use(express.json());
 
 const frontendOrigin = env.FRONTEND_ORIGIN;
