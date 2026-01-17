@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import { db } from "../../db/index.js";
 import {
+    customers,
     orderAddresses,
     orderItems,
     orders,
@@ -28,11 +29,13 @@ export async function listAvailableOrders(req, res, next) {
                 subtotalAmount: orders.subtotalAmount,
                 totalAmount: orders.totalAmount,
                 createdAt: orders.createdAt,
+                customerName: customers.name,
                 addressLabel: orderAddresses.label,
                 addressLine1: orderAddresses.line1,
                 addressLine2: orderAddresses.line2,
             })
             .from(orders)
+            .innerJoin(customers, eq(customers.id, orders.customerId))
             .leftJoin(riderAssignments, eq(riderAssignments.orderId, orders.id))
             .leftJoin(orderAddresses, eq(orderAddresses.orderId, orders.id))
             .where(and(eq(orders.status, "CREATED"), isNull(riderAssignments.orderId)))
@@ -97,11 +100,13 @@ export async function listMyActiveOrders(req, res, next) {
                 subtotalAmount: orders.subtotalAmount,
                 totalAmount: orders.totalAmount,
                 createdAt: orders.createdAt,
+                customerName: customers.name,
                 addressLabel: orderAddresses.label,
                 addressLine1: orderAddresses.line1,
                 addressLine2: orderAddresses.line2,
             })
             .from(orders)
+            .innerJoin(customers, eq(customers.id, orders.customerId))
             .innerJoin(riderAssignments, eq(riderAssignments.orderId, orders.id))
             .leftJoin(orderAddresses, eq(orderAddresses.orderId, orders.id))
             .where(
