@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "../../db/index.js";
-import { products } from "../../db/schema.js";
+import { orderItems, products } from "../../db/schema.js";
 import { uploadImageBuffer } from "../../utils/cloudinary.js";
 import { toBooleanOrUndefined, toStringOrUndefined } from "../../utils/common.js";
 
@@ -209,6 +209,20 @@ export async function deleteProduct(req, res, next) {
     try {
         const productId = toStringOrUndefined(req.params?.productId);
         if (!productId) return res.status(400).json({ error: "PRODUCT_ID_REQUIRED" });
+
+        // Check if product is referenced in any orders
+        const orderRefs = await db
+            .select({ id: orderItems.id })
+            .from(orderItems)
+            .where(eq(orderItems.productId, productId))
+            .limit(1);
+
+        if (orderRefs.length > 0) {
+            return res.status(409).json({
+                error: "PRODUCT_HAS_ORDERS",
+                message: "Cannot delete a product that has been ordered. Deactivate it instead.",
+            });
+        }
 
         const deleted = await db
             .delete(products)
